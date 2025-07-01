@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const leadCtrl = require('../controllers/leadController');
+const leadController = require('../controllers/leadController');
 
 
 router.get('/', auth(null, true), leadCtrl.getLeads);
@@ -16,5 +17,8 @@ router.get('/:id', auth(), leadCtrl.getLead);
 router.post('/assign', auth('admin'), leadCtrl.assignLeads);
 router.post('/upload', auth('admin'), upload.single('csv'), leadCtrl.uploadCsv);
 router.delete('/batch/:batchName', auth('admin'), leadCtrl.deleteLeadsByBatch);
+router.get('/assigned-this-week', leadController.getLeadsAssignedThisWeek);
+
+
 
 module.exports = router;

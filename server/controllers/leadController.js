@@ -6,7 +6,6 @@ const csv = require('csvtojson');
 const path = require('path');
 const fs = require('fs');
 
-
 exports.uploadCsv = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -77,9 +76,9 @@ exports.uploadCsv = async (req, res) => {
           leadType: l.leadType || 'warm',
           location: l.location,
           language: l.language,
-          status: 'ongoing',
+          status: 'assigned',
           fileName: fileName,
-          assignedTo: new mongoose.Types.ObjectId(assignedToId), 
+          assignedTo: new mongoose.Types.ObjectId(assignedToId),
           assignedToName: assignedToName,
         });
         await lead.save();
@@ -96,7 +95,7 @@ exports.uploadCsv = async (req, res) => {
         leadType: l.leadType || 'warm',
         location: l.location,
         language: l.language,
-        status: 'ongoing',
+        status: 'unassigned',
         fileName: fileName,
         assignedTo: null,
         assignedToName: "",
@@ -105,7 +104,10 @@ exports.uploadCsv = async (req, res) => {
       unassignedLeads.push(lead);
     }
 
-    await new Activity({ message: `CSV uploaded: ${assignedLeads.length} assigned, ${unassignedLeads.length} unassigned from ${fileName}`, user: req.user?._id }).save();
+    await new Activity({
+      message: `${assignedLeads.length} leads added by ${req.user?.name || 'Admin'}`,
+      user: req.user?._id
+    }).save();
 
     res.json({
       message: `${assignedLeads.length} assigned, ${unassignedLeads.length} unassigned`,
@@ -120,7 +122,6 @@ exports.uploadCsv = async (req, res) => {
   }
 };
 
-
 exports.getLeads = async (req, res) => {
   let query = {};
   try {
@@ -130,7 +131,7 @@ exports.getLeads = async (req, res) => {
       query = { assignedTo: user._id };
     }
     else if (req.user && req.user.role === 'admin') {
-      query = {}; 
+      query = {};
     } else {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -147,12 +148,10 @@ exports.getLeads = async (req, res) => {
   }
 };
 
-
 exports.downloadSampleCsv = (req, res) => {
   res.attachment('sample_leads.csv');
   res.send('name,email,phone,leadType,location,language\nJohn Doe,johndoe@example.com,1234567890,hot,Delhi,English');
 };
-
 
 exports.addLead = async (req, res) => {
   const { name, email, phone, leadType, location, language, fileName, assignedTo } = req.body;
@@ -171,15 +170,17 @@ exports.addLead = async (req, res) => {
     location,
     language,
     fileName,
-    status: 'ongoing',
+    status: assignedTo ? 'assigned' : 'unassigned',
     assignedTo: assignedTo ? new mongoose.Types.ObjectId(assignedTo) : null,
     assignedToName
   });
   await lead.save();
-  await new Activity({ message: `Lead ${name} added`, user: req.user?._id }).save();
+  await new Activity({
+    message: `1 lead added by ${req.user?.name || 'Admin'}`,
+    user: req.user?._id
+  }).save();
   res.json({ message: 'Lead added', lead });
 };
-
 
 exports.getLead = async (req, res) => {
   const lead = await Lead.findById(req.params.id).populate('assignedTo', 'name email');
@@ -188,7 +189,6 @@ exports.getLead = async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   res.json(lead);
 };
-
 
 exports.updateLead = async (req, res) => {
   const lead = await Lead.findById(req.params.id);
@@ -201,14 +201,31 @@ exports.updateLead = async (req, res) => {
     }
   }
 
+  let closedActivityLogged = false;
+  if (req.body.status === "closed" && lead.status !== "closed") {
+    const employee = await User.findById(lead.assignedTo);
+    await new Activity({
+      message: `${employee ? employee.name : 'Someone'} closed lead: ${lead.name}`,
+      user: req.user?._id || lead.assignedTo
+    }).save();
+    closedActivityLogged = true;
+  }
+
   if (req.body.assignedTo && req.body.assignedTo !== lead.assignedTo?.toString()) {
     const user = await User.findById(req.body.assignedTo).select('name');
     lead.assignedToName = user ? user.name : "";
     lead.assignedTo = new mongoose.Types.ObjectId(req.body.assignedTo);
+    lead.status = 'assigned';
   }
   Object.assign(lead, req.body);
   await lead.save();
-  await new Activity({ message: `Lead ${lead.name} updated`, user: req.user?._id }).save();
+
+  if (!closedActivityLogged) {
+    await new Activity({
+      message: `Lead ${lead.name} updated by ${req.user?.name || 'Admin'}`,
+      user: req.user?._id
+    }).save();
+  }
   res.json({ message: 'Lead updated', lead });
 };
 
@@ -216,15 +233,28 @@ exports.assignLeads = async (req, res) => {
   const { leadIds, employeeId } = req.body;
   if (!leadIds || !employeeId) return res.status(400).json({ error: 'Missing leadIds or employeeId' });
 
-
   const user = await User.findById(employeeId).select('name');
   const assignedToName = user ? user.name : "";
-  await Lead.updateMany(
+  const result = await Lead.updateMany(
     { _id: { $in: leadIds } },
-    { assignedTo: new mongoose.Types.ObjectId(employeeId), assignedToName, status: 'ongoing' }
+    { assignedTo: new mongoose.Types.ObjectId(employeeId), assignedToName, status: 'assigned' }
   );
-  await new Activity({ message: `Leads assigned to employee`, user: req.user?._id }).save();
+  await new Activity({
+    message: `${result.nModified || result.modifiedCount || leadIds.length} leads assigned to ${assignedToName}`,
+    user: req.user?._id
+  }).save();
   res.json({ message: 'Leads assigned' });
+};
+
+exports.getLeadsAssignedThisWeek = async (req, res) => {
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setHours(0,0,0,0);
+  const leads = await Lead.find({
+    status: 'assigned',
+    updatedAt: { $gte: startOfWeek }
+  });
+  res.json(leads);
 };
 
 exports.deleteLeadsByBatch = async (req, res) => {
@@ -234,7 +264,10 @@ exports.deleteLeadsByBatch = async (req, res) => {
       return res.status(400).json({ error: 'Batch name is required' });
     }
     const result = await Lead.deleteMany({ fileName });
-    await new Activity({ message: `Deleted all leads in batch: ${fileName}`, user: req.user?._id }).save();
+    await new Activity({
+      message: `Deleted all leads in batch: ${fileName}`,
+      user: req.user?._id
+    }).save();
     res.json({ message: `Deleted ${result.deletedCount} leads in batch "${fileName}"` });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete leads by batch' });

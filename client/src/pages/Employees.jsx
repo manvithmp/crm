@@ -11,6 +11,11 @@ function getInitials(name) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+function isActive(lastLogin) {
+  if (!lastLogin) return false;
+  return (Date.now() - new Date(lastLogin).getTime()) < 15 * 60 * 1000;
+}
+
 const statusColor = status =>
   status === 'active'
     ? styles.statusActive
@@ -33,7 +38,6 @@ const Employees = ({ user }) => {
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [page, setPage] = useState(1);
 
- 
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -42,7 +46,6 @@ const Employees = ({ user }) => {
     language: ''
   });
 
-  
   const totalPages = Math.ceil(
     (employees.filter(
       e =>
@@ -86,7 +89,8 @@ const Employees = ({ user }) => {
         empId: emp.empId || '#'+(emp._id || '').slice(-10).toUpperCase(),
         assignedLeads: stats[emp._id]?.assigned || 0,
         closedLeads: stats[emp._id]?.closed || 0,
-        status: emp.status || 'active'
+        status: isActive(emp.lastLogin) ? 'active' : 'inactive',
+        lastLogin: emp.lastLogin
       }))
     );
   }
@@ -125,7 +129,6 @@ const Employees = ({ user }) => {
       status: 'active'
     };
     if (showEditModal && editEmployee) {
-     
       fetch(`http://localhost:5000/api/employees/${editEmployee._id}`, {
         method: 'PUT',
         headers: {
@@ -139,7 +142,6 @@ const Employees = ({ user }) => {
         fetchAll();
       });
     } else {
-   
       fetch('http://localhost:5000/api/employees', {
         method: 'POST',
         headers: {
@@ -300,7 +302,6 @@ const Employees = ({ user }) => {
         </button>
       </div>
 
-
       {(showAddModal || showEditModal) && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
@@ -373,7 +374,6 @@ const Employees = ({ user }) => {
         </div>
       )}
 
-    
       {showDeleteConfirm && (
         <div className={styles.modalBackdrop}>
           <div className={styles.confirmBox}>

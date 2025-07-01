@@ -4,6 +4,13 @@ import { FiUsers, FiUserCheck, FiUser, FiTrendingUp } from 'react-icons/fi';
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 
+const API_BASE = 'http://localhost:5000';
+
+function isActive(lastLogin) {
+  if (!lastLogin) return false;
+  return Date.now() - new Date(lastLogin).getTime() < 15 * 60 * 1000;
+}
+
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState({
     unassignedLeads: 0,
@@ -31,7 +38,11 @@ const Dashboard = ({ user }) => {
       });
       return;
     }
-    fetch('http://localhost:5000/api/leads', {
+
+    let leadsData = [];
+    let allEmployees = [];
+
+    fetch(`${API_BASE}/api/leads`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(async r => {
@@ -43,11 +54,12 @@ const Dashboard = ({ user }) => {
       })
       .then(leads => {
         if (!Array.isArray(leads)) throw new Error('Leads response is not an array');
+        leadsData = leads;
         const now = new Date();
         const oneWeekAgo = new Date(now);
         oneWeekAgo.setDate(now.getDate() - 7);
 
-        let unassigned = 0, assignedThisWeek = 0, closed = 0;
+        let unassigned = 0, assignedThisWeek = 0;
         const conversions = Array(7).fill(0);
         const labels = [];
         for (let i = 6; i >= 0; i--) {
@@ -64,7 +76,6 @@ const Dashboard = ({ user }) => {
             assignedDate &&
             assignedDate > oneWeekAgo
           ) assignedThisWeek++;
-          if (l.status === 'closed') closed++;
           if (l.status === 'closed' && l.date) {
             const closedDate = new Date(l.date);
             const diffDays = Math.floor((now - closedDate) / (1000 * 60 * 60 * 24));
@@ -103,7 +114,7 @@ const Dashboard = ({ user }) => {
           ]
         });
 
-        fetch('http://localhost:5000/api/employees', {
+        fetch(`${API_BASE}/api/employees`, {
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(async r => {
@@ -115,7 +126,7 @@ const Dashboard = ({ user }) => {
           })
           .then(emps => {
             if (!Array.isArray(emps)) throw new Error('Employees response is not an array');
-            const employeesWithLeads = emps.map(e => {
+            allEmployees = emps.map(e => {
               const eid = e._id;
               return {
                 ...e,
@@ -126,7 +137,7 @@ const Dashboard = ({ user }) => {
 
             setStats(s => ({
               ...s,
-              activeSalespeople: employeesWithLeads.length,
+              activeSalespeople: allEmployees.filter(emp => isActive(emp.lastLogin)).length,
               conversionRate:
                 leads.length > 0
                   ? Math.round(
@@ -136,7 +147,7 @@ const Dashboard = ({ user }) => {
                     )
                   : 0
             }));
-            setEmployees(employeesWithLeads);
+            setEmployees(allEmployees);
           })
           .catch(err => {
             setEmployees([]);
@@ -152,10 +163,29 @@ const Dashboard = ({ user }) => {
         });
       });
 
-    setActivity([
-      { message: 'You assigned a lead to Priya', time: '1 hour ago' },
-      { message: 'Jay closed a deal', time: '2 hours ago' }
-    ]);
+    fetch(`${API_BASE}/api/activity`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async r => {
+        if (!r.ok) {
+          setActivity([]);
+          return;
+        }
+        const acts = await r.json();
+        setActivity(
+          Array.isArray(acts)
+            ? acts
+                .slice(0, 5)
+                .map(a => ({
+                  message: a.message,
+                  time: a.createdAt
+                    ? new Date(a.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })
+                    : ''
+                }))
+            : []
+        );
+      })
+      .catch(() => setActivity([]));
   }, [user]);
 
   const cardSections = [
@@ -193,7 +223,9 @@ const Dashboard = ({ user }) => {
           <FiUsers className={styles.statIcon} />
           <div>
             <div className={styles.statTitle}>Active Salespeople</div>
-            <div className={styles.statValue}>{stats.activeSalespeople}</div>
+            <div className={styles.statValue}>
+              {employees.filter(emp => isActive(emp.lastLogin)).length}
+            </div>
           </div>
         </div>
       )
@@ -246,7 +278,8 @@ const Dashboard = ({ user }) => {
           <ul>
             {activity.map((a, i) => (
               <li key={a.message + i}>
-                <span>•</span> {a.message} <span className={styles.time}>— {a.time}</span>
+                <span>•</span> {a.message}
+                <span className={styles.time}>— {a.time}</span>
               </li>
             ))}
           </ul>
@@ -298,9 +331,15 @@ const Dashboard = ({ user }) => {
                   <td>{emp.assignedLeads}</td>
                   <td>{emp.closedLeads}</td>
                   <td>
-                    <span className={styles.statusActive}>
-                      <span className={styles.statusDot}></span> Active
-                    </span>
+                    {isActive(emp.lastLogin) ? (
+                      <span className={styles.statusActive}>
+                        <span className={styles.statusDot}></span> Active
+                      </span>
+                    ) : (
+                      <span className={styles.statusInactive}>
+                        <span className={styles.statusDot}></span> Inactive
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -395,7 +434,8 @@ const Dashboard = ({ user }) => {
               <ul>
                 {activity.map((a, i) => (
                   <li key={a.message + i}>
-                    <span>•</span> {a.message} <span className={styles.time}>— {a.time}</span>
+                    <span>•</span> {a.message}
+                    <span className={styles.time}>— {a.time}</span>
                   </li>
                 ))}
               </ul>

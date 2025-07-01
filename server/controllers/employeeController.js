@@ -3,15 +3,18 @@ const bcrypt = require('bcryptjs');
 const Activity = require('../models/Activity');
 const Lead = require('../models/Lead');
 
+
 exports.getEmployees = async (req, res) => {
-  const employees = await User.find({ role: 'employee' });
+
+  const employees = await User.find({ role: 'employee' }).select(
+    'name email empId avatar status lastLogin location language'
+  );
   res.json(employees);
 };
 
 exports.addEmployee = async (req, res) => {
   const { name, email, password, location, language } = req.body;
 
- 
   const lastEmployee = await User.findOne({ role: 'employee', empId: { $regex: /^E\d{3}$/ } })
     .sort({ empId: -1 })
     .collation({ locale: 'en_US', numericOrdering: true });

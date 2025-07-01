@@ -23,3 +23,8 @@ exports.employeeActivity = async (req, res) => {
     }))
   });
 };
+
+exports.getActivities = async (req, res) => {
+  const activities = await Activity.find({}).sort({ createdAt: -1 }).limit(5);
+  res.json(activities);
+}

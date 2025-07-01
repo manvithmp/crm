@@ -17,7 +17,9 @@ exports.login = async (req, res) => {
     if (!valid)
       return res.status(401).json({ error: 'Invalid credentials' });
 
-   
+    user.lastLogin = new Date();
+    await user.save();
+
     if (user.role === 'employee') {
       let today = new Date();
       today.setHours(0,0,0,0);
@@ -27,13 +29,11 @@ exports.login = async (req, res) => {
         await attendance.save();
         await new Activity({ user: user._id, message: 'Checked in' }).save();
       }
-    
       return res.json({
         user: { _id: user._id, email: user.email, name: user.name, role: user.role }
       });
     }
 
- 
     const token = jwt.sign(
       { id: user._id, role: user.role },
       JWT_SECRET,

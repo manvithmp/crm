@@ -24,6 +24,7 @@ app.use('/api/activity', require('./routes/activity'));
 app.use('/api/users', require('./routes/user'));
 
 
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

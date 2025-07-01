@@ -8,7 +8,9 @@ const userSchema = new mongoose.Schema({
   location: String,
   language: String,
   empId: String,
+  lastLogin: { type: Date },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  avatar: String,
 });
 
 module.exports = mongoose.model('User', userSchema);
