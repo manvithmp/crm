@@ -41,10 +41,30 @@ const Dashboard = ({ user }) => {
 
     let leadsData = [];
     let allEmployees = [];
+    let employeeMap = {};
 
-    fetch(`${API_BASE}/api/leads`, {
+    fetch(`${API_BASE}/api/employees`, {
       headers: { Authorization: `Bearer ${token}` }
     })
+      .then(async r => {
+        if (!r.ok) {
+          const data = await r.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to fetch employees');
+        }
+        return r.json();
+      })
+      .then(emps => {
+        if (!Array.isArray(emps)) throw new Error('Employees response is not an array');
+        allEmployees = emps;
+        employeeMap = {};
+        allEmployees.forEach(e => {
+          employeeMap[e._id] = e.name || e.email || e.empId || 'Employee';
+        });
+
+        return fetch(`${API_BASE}/api/leads`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      })
       .then(async r => {
         if (!r.ok) {
           const data = await r.json().catch(() => ({}));
@@ -56,12 +76,11 @@ const Dashboard = ({ user }) => {
         if (!Array.isArray(leads)) throw new Error('Leads response is not an array');
         leadsData = leads;
         const now = new Date();
-        const oneWeekAgo = new Date(now);
-        oneWeekAgo.setDate(now.getDate() - 7);
+        let unassigned = 0;
+        let totalAssigned = 0;
 
-        let unassigned = 0, assignedThisWeek = 0;
-        const conversions = Array(7).fill(0);
         const labels = [];
+        const closedLeadCounts = Array(7).fill(0); 
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
           d.setDate(now.getDate() - i);
@@ -70,17 +89,12 @@ const Dashboard = ({ user }) => {
 
         leads.forEach(l => {
           if (l.status === 'unassigned') unassigned++;
-          const assignedDate = l.createdAt ? new Date(l.createdAt) : null;
-          if (
-            l.status === 'assigned' &&
-            assignedDate &&
-            assignedDate > oneWeekAgo
-          ) assignedThisWeek++;
+          if (l.status === 'assigned') totalAssigned++;
           if (l.status === 'closed' && l.date) {
             const closedDate = new Date(l.date);
             const diffDays = Math.floor((now - closedDate) / (1000 * 60 * 60 * 24));
             if (diffDays >= 0 && diffDays <= 6) {
-              conversions[6 - diffDays] += 1;
+              closedLeadCounts[6 - diffDays] += 1;
             }
           }
         });
@@ -100,62 +114,71 @@ const Dashboard = ({ user }) => {
         setStats(s => ({
           ...s,
           unassignedLeads: unassigned,
-          assignedThisWeek,
+          assignedThisWeek: totalAssigned
         }));
 
         setChartData({
           labels,
           datasets: [
             {
-              label: 'Daily Conversion',
-              data: conversions,
+              label: 'Closed Leads',
+              data: closedLeadCounts,
               backgroundColor: '#d2d6df'
             }
           ]
         });
 
-        fetch(`${API_BASE}/api/employees`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(async r => {
-            if (!r.ok) {
-              const data = await r.json().catch(() => ({}));
-              throw new Error(data.error || 'Failed to fetch employees');
-            }
-            return r.json();
-          })
-          .then(emps => {
-            if (!Array.isArray(emps)) throw new Error('Employees response is not an array');
-            allEmployees = emps.map(e => {
-              const eid = e._id;
-              return {
-                ...e,
-                assignedLeads: employeeLeadStats[eid]?.assignedLeads || 0,
-                closedLeads: employeeLeadStats[eid]?.closedLeads || 0
-              };
-            });
+        allEmployees = allEmployees.map(e => {
+          const eid = e._id;
+          return {
+            ...e,
+            assignedLeads: employeeLeadStats[eid]?.assignedLeads || 0,
+            closedLeads: employeeLeadStats[eid]?.closedLeads || 0
+          };
+        });
 
-            setStats(s => ({
-              ...s,
-              activeSalespeople: allEmployees.filter(emp => isActive(emp.lastLogin)).length,
-              conversionRate:
-                leads.length > 0
-                  ? Math.round(
-                      (leads.filter(l => l.status === 'closed').length /
-                        leads.length) *
-                        100
-                    )
-                  : 0
+        setStats(s => ({
+          ...s,
+          activeSalespeople: allEmployees.filter(emp => isActive(emp.lastLogin)).length,
+          conversionRate:
+            leads.length > 0
+              ? Math.round(
+                  (leads.filter(l => l.status === 'closed').length /
+                    leads.length) *
+                    100
+                )
+              : 0
+        }));
+        setEmployees(allEmployees);
+
+        return fetch(`${API_BASE}/api/activity`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      })
+      .then(async r => {
+        if (!r.ok) {
+          setActivity([]);
+          return;
+        }
+        const acts = await r.json();
+        let feed = [];
+        if (Array.isArray(acts)) {
+
+          feed = acts
+            .slice(0, 5)
+            .map(a => ({
+              message: a.message,
+              time: a.createdAt
+                ? new Date(a.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })
+                : ''
             }));
-            setEmployees(allEmployees);
-          })
-          .catch(err => {
-            setEmployees([]);
-            setError(err.message || 'Failed to fetch employees');
-          });
+
+
+        }
+        setActivity(feed);
       })
       .catch(err => {
-        setError(err.message || 'Failed to fetch leads');
+        setError(err.message || 'Failed to fetch dashboard data');
         setEmployees([]);
         setChartData({
           labels: [],
@@ -163,29 +186,6 @@ const Dashboard = ({ user }) => {
         });
       });
 
-    fetch(`${API_BASE}/api/activity`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(async r => {
-        if (!r.ok) {
-          setActivity([]);
-          return;
-        }
-        const acts = await r.json();
-        setActivity(
-          Array.isArray(acts)
-            ? acts
-                .slice(0, 5)
-                .map(a => ({
-                  message: a.message,
-                  time: a.createdAt
-                    ? new Date(a.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })
-                    : ''
-                }))
-            : []
-        );
-      })
-      .catch(() => setActivity([]));
   }, [user]);
 
   const cardSections = [

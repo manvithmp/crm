@@ -15,7 +15,7 @@ exports.employeeActivity = async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ email, role: "employee" });
   if (!user) return res.json({ activity: [] });
-  const acts = await Activity.find({ user: user._id }).sort({ timestamp: -1 }).limit(10);
+  const acts = await Activity.find({ user: user._id }).sort({ timestamp: -1 }).limit(5);
   res.json({
     activity: acts.map(a => ({
       message: a.message,
@@ -27,4 +27,4 @@ exports.employeeActivity = async (req, res) => {
 exports.getActivities = async (req, res) => {
   const activities = await Activity.find({}).sort({ createdAt: -1 }).limit(5);
   res.json(activities);
-}
+};
