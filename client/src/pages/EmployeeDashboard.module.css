@@ -1,0 +1,272 @@
+.root {
+  max-width: 400px;
+  margin: auto;
+  background: #fff;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: #181C32;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+}
+
+.header {
+  background: linear-gradient(160deg, #2551D9 80%, #2037A7 100%);
+  border-radius: 0 0 32px 32px;
+  color: #fff;
+  padding: 24px 20px 36px 20px;
+  text-align: left;
+  position: relative;
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.greet {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-bottom: 0px;
+}
+
+.name {
+  font-size: 1.22rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.section {
+  margin: 24px 0 0 0;
+  padding: 0 18px;
+}
+
+.sectionTitle {
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.timingCard {
+  background: #3054e5;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px #0001;
+  padding: 0;
+  margin-bottom: 14px;
+}
+
+.timingInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px 18px;
+}
+
+.timingColumn {
+  flex: 1;
+}
+
+.label {
+  font-size: 0.97rem;
+  color: #ffffff;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.value {
+  font-size: 1.19rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.indicator {
+  align-self: flex-start;
+  margin-left: 12px;
+  margin-top: 8px;
+}
+
+.breakCard {
+  background: #2551D9;
+  border-radius: 16px;
+  color: #fff;
+  padding: 14px 0 16px 0;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.breakRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px 6px 18px;
+}
+
+.historyTable {
+  margin-top: 14px;
+  background: #F7F8FC;
+  border-radius: 12px;
+  padding: 10px 0 2px 0;
+  color: #222;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.historyRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.97rem;
+  background: none;
+  padding: 2px 18px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.historyRow:last-child {
+  border-bottom: none;
+}
+
+.historyCell {
+  flex: 1;
+  text-align: left;
+}
+
+.activityCard {
+  background: #F7F8FC;
+  border-radius: 12px;
+  min-height: 64px;
+  padding: 13px 16px;
+  margin-top: 6px;
+  color: #181C32;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.activityItem {
+  margin-bottom: 6px;
+}
+
+.activityTime {
+  color: #767676;
+  font-size: 0.91em;
+  font-weight: 400;
+  margin-left: 3px;
+}
+
+.navbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 400px;
+  margin: auto;
+  display: flex;
+  background: #fff;
+  border-top: 1.5px solid #E0E6F7;
+  height: 62px;
+  z-index: 100;
+  justify-content: space-around;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.navitem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #181C32;
+  font-size: 0.84em;
+  font-weight: 500;
+  cursor: pointer;
+  justify-content: center;
+  padding: 0 6px;
+  height: 100%;
+  transition: color 0.15s;
+}
+
+.navitem:hover,
+.navitem.active {
+  color: #2551D9;
+}
+
+.active {
+  color: #2551D9;
+  border-bottom: 2.5px solid #2551D9;
+  padding-bottom: 4px;
+}
+
+.loading {
+  padding: 80px;
+  text-align: center;
+  color: #2551D9;
+  font-size: 1.2em;
+}
+
+
+
+.pill-indicator {
+  width: 22px;
+  height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  background: #ececec;
+  box-shadow: 0 0 3px #0002;
+  position: relative;
+}
+
+.pill-indicator.green {
+  background: linear-gradient(180deg, #64E800 0%, #64E800 100%);
+  box-shadow: 0 0 10px 2px #02ff1b, 0 0 2px #ff0000;
+}
+
+.pill-indicator.red {
+  background: linear-gradient(180deg, #E80000 0%, #E80000 100%);
+  box-shadow: 0 0 10px 2px #ff474788, 0 0 2px #ff4747d0;
+}
+
+
+
+.actionBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 62px; 
+  max-width: 400px;
+  margin: auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0 8px 0;
+  background: #2551D9;
+  z-index: 120;
+  gap: 16px;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  box-shadow: 0 -2px 8px #0001;
+}
+
+.breakBtn, .checkoutBtn {
+  padding: 12px 22px;
+  font-size: 1.08em;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  background: #fff;
+  color: #2551D9;
+  cursor: pointer;
+  box-shadow: 0 1px 2px #0001;
+  transition: background 0.17s, color 0.17s;
+}
+.breakBtn:disabled, .checkoutBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.checkoutBtn {
+  background: #fff;
+  color: #2551D9;
+}
+.breakBtn {
+  background: #fff;
+  color: #2551D9;
+}
+

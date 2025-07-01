@@ -1,0 +1,91 @@
+.sidebar {
+  width: 220px;
+  background: #e9e9eb;
+  height: 100vh;
+  padding: 1.8rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  border-right: 1px solid #e2e2e4;
+}
+.logo {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin-left: 2.1rem;
+  margin-bottom: 2.5rem;
+  letter-spacing: -0.5px;
+  color: #232323;
+}
+.crm {
+  color: #2563eb;
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.nav a {
+  display: flex;
+  align-items: center;
+  color: #232323;
+  text-decoration: none;
+  font-size: 1.1rem;
+  padding: 0.7rem 2rem 0.7rem 2.1rem;
+  border-radius: 8px 0 0 8px;
+  transition: background 0.16s;
+  margin-right: 1.1rem;
+}
+.nav a:hover, .nav a.active, .nav .active {
+  background: #f2f4f7;
+  font-weight: 600;
+}
+.icon {
+  margin-right: 0.9rem;
+  font-size: 1.23rem;
+  color: #8a8a8e;
+}
+.active .icon {
+  color: #2563eb;
+}
+.profileSection {
+  margin-top: auto;
+  padding: 1rem 2.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #f2f2f4;
+  color: #454545;
+  border: none;
+  padding: 0.55rem 1.2rem;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+  transition: background 0.15s;
+  position: relative;
+  top: -50px;
+}
+.logoutBtn:hover {
+  background: #dadcdf;
+}
+.logoutIcon {
+  font-size: 1.18rem;
+}
+.profileNav {
+  display: flex;
+  align-items: center;
+  font-size: 1.05rem;
+  color: #5e5e60;
+  gap: 0.7rem;
+  margin-top: 0.2rem;
+  cursor: pointer;
+}

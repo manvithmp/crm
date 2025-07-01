@@ -1,0 +1,64 @@
+.signInContainer {
+  min-height: 100vh;
+  background: #f5f6fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.signInForm {
+  background: #fff;
+  padding: 2.5rem 2.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.08);
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.inputGroup {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e2e2e4;
+  border-radius: 8px;
+  background: #fafafd;
+  margin-bottom: 0.8rem;
+}
+.input {
+  border: none;
+  background: transparent;
+  padding: 0.8rem 1rem;
+  flex: 1;
+  font-size: 1rem;
+  outline: none;
+}
+.icon {
+  margin-left: 0.8rem;
+  color: #bdbdbd;
+  font-size: 1.2rem;
+}
+.title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: center;
+  color: #232323;
+  margin-bottom: 1rem;
+}
+.signInBtn {
+  background: #3b82fc;
+  color: #fff;
+  border: none;
+  padding: 0.9rem 0;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.signInBtn:hover {
+  background: #2563eb;
+}
+.errorMsg {
+  color: #e11d48;
+  text-align: center;
+  font-size: 0.97rem;
+}
