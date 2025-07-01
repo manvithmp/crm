@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import axios from "axios";
 import styles from "./Profile.module.css";
 import BottomNav from "../components/BottomNav";
 import { FiChevronLeft } from "react-icons/fi";
 
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+
 const Profile = ({ user }) => {
- 
   let firstName = "";
   let lastName = "";
   if (user && user.name) {
@@ -33,7 +35,6 @@ const Profile = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setMsg(null);
 
     if (!form.password || !form.confirmPassword) {
@@ -46,50 +47,48 @@ const Profile = ({ user }) => {
     }
     setSubmitting(true);
 
- 
     const token = user?.token || localStorage.getItem('token');
     try {
       let res, data;
       if (user?.role === "admin") {
-        res = await fetch("http://localhost:5000/api/profile", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
+        res = await axios.put(
+          "/api/profile",
+          {
             name: `${form.firstName} ${form.lastName}`,
             email: form.email,
             password: form.password,
-          }),
-        });
-        data = await res.json();
-        if (res.ok) {
-          setMsg("Profile updated successfully!");
-          setForm((f) => ({ ...f, password: "", confirmPassword: "" }));
-        } else {
-          setMsg(data.error || "Error updating profile.");
-        }
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        data = res.data;
+        setMsg("Profile updated successfully!");
+        setForm((f) => ({ ...f, password: "", confirmPassword: "" }));
       } else {
-    
-        res = await fetch("http://localhost:5000/api/users/update-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        res = await axios.post(
+          "/api/users/update-password",
+          {
             email: form.email,
             password: form.password,
-          }),
-        });
-        data = await res.json();
-        if (res.ok) {
-          setMsg("Password updated successfully!");
-          setForm((f) => ({ ...f, password: "", confirmPassword: "" }));
-        } else {
-          setMsg(data.error || "Error updating password.");
-        }
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        data = res.data;
+        setMsg("Password updated successfully!");
+        setForm((f) => ({ ...f, password: "", confirmPassword: "" }));
       }
     } catch (err) {
-      setMsg("Network error.");
+      if (err.response && err.response.data && err.response.data.error) {
+        setMsg(err.response.data.error);
+      } else {
+        setMsg("Network error.");
+      }
     }
     setSubmitting(false);
   };

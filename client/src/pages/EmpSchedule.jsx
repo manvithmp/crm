@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
+import axios from "axios";
 import styles from "./EmpSchedule.module.css";
 import BottomNav from "../components/BottomNav";
 import { FiChevronLeft, FiSearch, FiFilter, FiMapPin } from "react-icons/fi";
 
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const CALL_TYPE_LABEL = {
   referral: "Referral",
@@ -60,11 +62,15 @@ const EmpSchedule = ({ user }) => {
 
   async function fetchCalls() {
     setLoading(true);
-    const res = await fetch(`http://localhost:5000/api/calls?employeeEmail=${encodeURIComponent(user.email)}`);
-    let data = await res.json();
-    data = data.filter(c => c.status === "scheduled");
-    data.sort((a, b) => new Date(a.date) - new Date(b.date));
-    setCalls(data);
+    try {
+      const res = await axios.get(`/api/calls?employeeEmail=${encodeURIComponent(user.email)}`);
+      let data = res.data;
+      data = data.filter(c => c.status === "scheduled");
+      data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setCalls(data);
+    } catch {
+      setCalls([]);
+    }
     setLoading(false);
   }
 
@@ -93,7 +99,6 @@ const EmpSchedule = ({ user }) => {
     }
     setDisplayed(filtered);
   }, [calls, search, filter]);
-
 
   const first = displayed[0];
   const rest = displayed.slice(1);

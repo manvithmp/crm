@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 import styles from './EmpLead.module.css';
 import BottomNav from '../components/BottomNav';
 import { FiChevronLeft, FiSearch, FiFilter, FiEdit2, FiClock, FiCheckCircle, FiCalendar, FiX } from 'react-icons/fi';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const LEAD_TYPE_COLORS = {
   hot: '#FF6B00',
@@ -152,22 +155,27 @@ const EmpLead = ({ user }) => {
 
   async function fetchLeads() {
     setLoading(true);
-    const res = await fetch(`http://localhost:5000/api/leads?employeeEmail=${encodeURIComponent(user.email)}`);
-    const data = await res.json();
-    if (!Array.isArray(data)) {
+    try {
+      const res = await axios.get(`/api/leads?employeeEmail=${encodeURIComponent(user.email)}`);
+      const data = res.data;
+      if (!Array.isArray(data)) {
+        setLeads([]);
+        setOrigLeads([]);
+        setLoading(false);
+        return;
+      }
+      const withDefaults = data
+        .map(l => ({
+          ...l,
+          leadType: l.leadType || 'warm',
+          status: l.status || 'ongoing'
+        }));
+      setLeads(withDefaults.filter(l => l.assignedTo && user && l.assignedTo._id === user._id));
+      setOrigLeads(withDefaults.filter(l => l.assignedTo && user && l.assignedTo._id === user._id));
+    } catch {
       setLeads([]);
       setOrigLeads([]);
-      setLoading(false);
-      return;
     }
-    const withDefaults = data
-      .map(l => ({
-        ...l,
-        leadType: l.leadType || 'warm',
-        status: l.status || 'ongoing'
-      }));
-    setLeads(withDefaults.filter(l => l.assignedTo && user && l.assignedTo._id === user._id));
-    setOrigLeads(withDefaults.filter(l => l.assignedTo && user && l.assignedTo._id === user._id));
     setLoading(false);
   }
 
@@ -186,26 +194,15 @@ const EmpLead = ({ user }) => {
     setLeads(filtered);
   }, [search, filter, origLeads]);
 
-
   const handleTypeChange = async (leadId, newType) => {
-    await fetch(`http://localhost:5000/api/leads/${leadId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadType: newType, employeeEmail: user.email })
-    });
+    await axios.put(`/api/leads/${leadId}`, { leadType: newType, employeeEmail: user.email });
     fetchLeads();
   };
-
 
   const handleStatusChange = async (leadId, newStatus, lead) => {
-    await fetch(`http://localhost:5000/api/leads/${leadId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus, employeeEmail: user.email })
-    });
+    await axios.put(`/api/leads/${leadId}`, { status: newStatus, employeeEmail: user.email });
     fetchLeads();
   };
-
 
   const callTypeMap = {
     cold: 'cold',
@@ -213,19 +210,13 @@ const EmpLead = ({ user }) => {
     warm: 'other'
   };
   const handleSchedule = async (lead, dt) => {
-    await fetch(`http://localhost:5000/api/calls`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        leadId: lead._id,
-        contactName: lead.name,
-        contact: lead.phone,
-        callType: callTypeMap[lead.leadType] || 'other',
-        date: dt,
-        employeeEmail: user.email
-      })
+    await axios.post(`/api/calls`, {
+      leadId: lead._id,
+      contactName: lead.name,
+      contact: lead.phone,
+      callType: callTypeMap[lead.leadType] || 'other',
+      date: dt,
+      employeeEmail: user.email
     });
     setOpenScheduleId(null);
     fetchLeads();
@@ -278,7 +269,6 @@ const EmpLead = ({ user }) => {
           <div className={styles.noLeads}>No leads found</div>
         )}
         {!loading && leads.map((lead, idx) => {
-         
           let s = STATUS_STYLES[1];
           if (lead.status === 'closed') s = STATUS_STYLES[2];
           else if (lead.leadType === 'hot') s = STATUS_STYLES[0];

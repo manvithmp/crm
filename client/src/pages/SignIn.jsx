@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import styles from './SignIn.module.css';
 import { FiLock, FiMail } from 'react-icons/fi';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const SignIn = ({ onSignIn }) => {
   const [email, setEmail] = useState('');
@@ -11,59 +14,62 @@ const SignIn = ({ onSignIn }) => {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.token && data.user && data.user.role === 'admin') {
-          localStorage.setItem('token', data.token);
-         
-          onSignIn({ ...data.user, token: data.token });
-        } else {
-         
-          localStorage.removeItem('token');
-          onSignIn(data.user);
-        }
+      const response = await axios.post('/api/auth/login', { email, password });
+      const data = response.data;
+      if (data.token && data.user && data.user.role === 'admin') {
+        localStorage.setItem('token', data.token);
+        onSignIn({ ...data.user, token: data.token });
       } else {
-        setError(data.error || 'Login failed');
+        localStorage.removeItem('token');
+        onSignIn(data.user);
       }
     } catch (err) {
-      setError('Network error');
+      setError(
+        err.response && err.response.data && err.response.data.error
+          ? err.response.data.error
+          : 'Login failed'
+      );
     }
   };
 
   return (
-    <div className={styles.signInContainer}>
-      <form className={styles.signInForm} onSubmit={handleSubmit}>
-        <h2 className={styles.title}>Sign In</h2>
-        <div className={styles.inputGroup}>
-          <FiMail className={styles.icon} />
-          <input
-            type="email"
-            placeholder="Email"
-            className={styles.input}
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className={styles.inputGroup}>
-          <FiLock className={styles.icon} />
-          <input
-            type="password"
-            placeholder="Password"
-            className={styles.input}
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <div className={styles.errorMsg}>{error}</div>}
-        <button type="submit" className={styles.signInBtn}>Sign In</button>
-      </form>
+    <div className={styles.signInPageWrapper}>
+      <div className={styles.signInContainer}>
+        <form className={styles.signInForm} onSubmit={handleSubmit}>
+          <h2 className={styles.title}>Sign In</h2>
+          <div className={styles.inputGroup}>
+            <FiMail className={styles.icon} />
+            <input
+              type="email"
+              placeholder="Email"
+              className={styles.input}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <FiLock className={styles.icon} />
+            <input
+              type="password"
+              placeholder="Password"
+              className={styles.input}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && <div className={styles.errorMsg}>{error}</div>}
+          <button type="submit" className={styles.signInBtn}>Sign In</button>
+        </form>
+      </div>
+      <div className={styles.signInImageWrapper}>
+        <img
+          src="https://wp.sfdcdigital.com/en-us/wp-content/uploads/sites/4/2024/09/n-up-resource-what-is-crm.webp"
+          alt="What is CRM"
+          className={styles.signInImage}
+        />
+      </div>
     </div>
   );
 };

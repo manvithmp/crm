@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 import styles from './Leads.module.css';
 import { FiUpload, FiX, FiDownload, FiMoreHorizontal, FiUser, FiTrash2 } from 'react-icons/fi';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 function formatDate(dateString) {
   if (!dateString) return '';
@@ -25,7 +28,6 @@ const Leads = () => {
   const [assignEmployees, setAssignEmployees] = useState([]);
   const [employeeToRemove, setEmployeeToRemove] = useState(null);
 
-
   const [dropdownOpenBatch, setDropdownOpenBatch] = useState(null);
   const [batchToDelete, setBatchToDelete] = useState(null);
   const [showDeleteBatchConfirm, setShowDeleteBatchConfirm] = useState(false);
@@ -44,13 +46,12 @@ const Leads = () => {
 
   const fetchEmployees = () => {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:5000/api/employees', {
+    axios.get('/api/employees', {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
-      .then(data => {
-        setEmployees(data);
-        setAssignEmployees(data.map(e => e._id));
+      .then(res => {
+        setEmployees(res.data);
+        setAssignEmployees(res.data.map(e => e._id));
       });
   };
 
@@ -62,11 +63,11 @@ const Leads = () => {
 
   function fetchBatches() {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:5000/api/leads', {
+    axios.get('/api/leads', {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
-      .then(leads => {
+      .then(res => {
+        const leads = res.data;
         const byFile = {};
         leads.forEach(l => {
           const file = l.fileName || l.batch || l.csvBatch || 'Unknown';
@@ -133,7 +134,6 @@ const Leads = () => {
     setShowDeleteBatchConfirm(false);
   };
 
- 
   const handleRemoveEmployeeAttempt = (id) => {
     setEmployeeToRemove(id);
     setShowConfirm(true);
@@ -154,12 +154,9 @@ const Leads = () => {
     formData.append('csv', csvFile);
     formData.append('fileName', csvFileName);
     formData.append('employeeIds', JSON.stringify(assignEmployees));
-    fetch('http://localhost:5000/api/leads/upload', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
+    axios.post('/api/leads/upload', formData, {
+      headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
       .then(() => {
         setUploading(false);
         handleModalClose();
@@ -168,14 +165,12 @@ const Leads = () => {
   };
 
   const handleSampleDownload = () => {
-    window.open('http://localhost:5000/api/leads/sample-csv', '_blank');
+    window.open(`${axios.defaults.baseURL}/api/leads/sample-csv`, '_blank');
   };
-
 
   const handleBatchDropdown = (batchName) => {
     setDropdownOpenBatch(dropdownOpenBatch === batchName ? null : batchName);
   };
-
 
   const handleDeleteBatchPrompt = (batchName) => {
     setBatchToDelete(batchName);
@@ -183,15 +178,12 @@ const Leads = () => {
     setDropdownOpenBatch(null);
   };
 
- 
   const handleDeleteBatch = () => {
     if (!batchToDelete) return;
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/leads/batch/${encodeURIComponent(batchToDelete)}`, {
-      method: 'DELETE',
+    axios.delete(`/api/leads/batch/${encodeURIComponent(batchToDelete)}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
       .then(() => {
         setShowDeleteBatchConfirm(false);
         setBatchToDelete(null);

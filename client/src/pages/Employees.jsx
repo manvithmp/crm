@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import styles from './Employees.module.css';
 import { FiUserPlus, FiEdit2, FiTrash2, FiMoreHorizontal, FiX } from 'react-icons/fi';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const PAGE_SIZE = 5;
 
@@ -56,21 +59,21 @@ const Employees = ({ user }) => {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line
   }, []);
 
   async function fetchAll() {
     const token = user?.token || localStorage.getItem('token');
-  
-    const empRes = await fetch('http://localhost:5000/api/employees', {
+    const empRes = await axios.get('/api/employees', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const emps = await empRes.json();
-   
-    const leadRes = await fetch('http://localhost:5000/api/leads', {
+    const emps = empRes.data;
+
+    const leadRes = await axios.get('/api/leads', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const leadsData = await leadRes.json();
-  
+    const leadsData = leadRes.data;
+
     const stats = {};
     leadsData.forEach(l => {
       if (l.assignedTo) {
@@ -86,7 +89,7 @@ const Employees = ({ user }) => {
         ...emp,
         name: emp.name,
         email: emp.email,
-        empId: emp.empId || '#'+(emp._id || '').slice(-10).toUpperCase(),
+        empId: emp.empId || '#' + (emp._id || '').slice(-10).toUpperCase(),
         assignedLeads: stats[emp._id]?.assigned || 0,
         closedLeads: stats[emp._id]?.closed || 0,
         status: isActive(emp.lastLogin) ? 'active' : 'inactive',
@@ -129,29 +132,25 @@ const Employees = ({ user }) => {
       status: 'active'
     };
     if (showEditModal && editEmployee) {
-      fetch(`http://localhost:5000/api/employees/${editEmployee._id}`, {
-        method: 'PUT',
+      axios.put(`/api/employees/${editEmployee._id}`, body, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
+        }
       }).then(() => {
         setShowEditModal(false);
         setEditEmployee(null);
         fetchAll();
       });
     } else {
-      fetch('http://localhost:5000/api/employees', {
-        method: 'POST',
+      axios.post('/api/employees', {
+        ...body,
+        password: 'password123'
+      }, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...body,
-          password: 'password123'
-        })
+        }
       }).then(() => {
         setShowAddModal(false);
         fetchAll();
@@ -166,8 +165,7 @@ const Employees = ({ user }) => {
   }
   function handleDeleteConfirmed() {
     const token = user?.token || localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/employees/${deleteEmployee._id}`, {
-      method: 'DELETE',
+    axios.delete(`/api/employees/${deleteEmployee._id}`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(() => {
       setShowDeleteConfirm(false);

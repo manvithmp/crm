@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import styles from './EmployeeDashboard.module.css';
 import BottomNav from '../components/BottomNav';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const EmployeeDashboard = ({ user, handleLogout }) => {
   const [attendance, setAttendance] = useState(null);
@@ -12,20 +15,25 @@ const EmployeeDashboard = ({ user, handleLogout }) => {
 
   useEffect(() => {
     fetchSummary();
- 
   }, [user]);
 
   async function fetchSummary() {
     setLoading(true);
-    const [attendanceRes, activityRes] = await Promise.all([
-      fetch(`http://localhost:5000/api/attendance/employee/summary?email=${user.email}`),
-      fetch(`http://localhost:5000/api/activity/employee?email=${user.email}`),
-    ]);
-    const attendanceData = await attendanceRes.json();
-    const activityData = await activityRes.json();
-    setAttendance(attendanceData.attendance);
-    setBreakHistory(attendanceData.breakHistory); 
-    setActivity(activityData.activity); 
+    try {
+      const [attendanceRes, activityRes] = await Promise.all([
+        axios.get(`/api/attendance/employee/summary?email=${user.email}`),
+        axios.get(`/api/activity/employee?email=${user.email}`),
+      ]);
+      const attendanceData = attendanceRes.data;
+      const activityData = activityRes.data;
+      setAttendance(attendanceData.attendance);
+      setBreakHistory(attendanceData.breakHistory);
+      setActivity(activityData.activity);
+    } catch (err) {
+      setAttendance(null);
+      setBreakHistory([]);
+      setActivity([]);
+    }
     setLoading(false);
   }
 
@@ -67,17 +75,9 @@ const EmployeeDashboard = ({ user, handleLogout }) => {
     setBreakLoading(true);
     try {
       if (!isOnBreak) {
-        await fetch('http://localhost:5000/api/attendance/break/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: user.email })
-        });
+        await axios.post('/api/attendance/break/start', { email: user.email });
       } else {
-        await fetch('http://localhost:5000/api/attendance/break/end', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: user.email })
-        });
+        await axios.post('/api/attendance/break/end', { email: user.email });
       }
       await fetchSummary();
     } catch (err) {
@@ -89,8 +89,7 @@ const EmployeeDashboard = ({ user, handleLogout }) => {
   const handleCheckOut = async () => {
     setCheckoutLoading(true);
     try {
-      await fetch('http://localhost:5000/api/attendance/checkout', {
-        method: 'POST',
+      await axios.post('/api/attendance/checkout', {}, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`

@@ -4,7 +4,7 @@ import { FiUsers, FiUserCheck, FiUser, FiTrendingUp } from 'react-icons/fi';
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 function isActive(lastLogin) {
   if (!lastLogin) return false;
