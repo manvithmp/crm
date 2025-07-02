@@ -18,3 +18,5 @@ the status of the employee will depend if they have checked in or not.
 sample leads are included for download. 
 
 some data already exists for reference.  
+
+if you are not seeing the numbers or letters then please switch to light mode or dark mode.
