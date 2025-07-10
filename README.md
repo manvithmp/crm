@@ -4,7 +4,7 @@ https://crm-sable-beta.vercel.app/
 
 admin credentials
 email: admin@example.com
-password: admin@1234
+password: admin1234
 
 employee credentials 
 email: manvith@example.com (any employee email will work. just use emp_name@example.com as email)
