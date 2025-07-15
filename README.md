@@ -20,3 +20,8 @@ sample leads are included for download.
 some data already exists for reference.  
 
 if you are not seeing the numbers or letters then please switch to light mode or dark mode.
+
+
+sample leads
+https://docs.google.com/spreadsheets/d/1a8Y4z4J6hdeDB11AGZ2pFA9qGRhczqXgKf_HWuskwGY/edit?usp=sharing
+
